@@ -1,0 +1,169 @@
+#include"fly_eats.h"
+#include"../base/interfaces.h"
+
+fly_eats::fly_eats()
+{
+      kind_id=enum_id_fly_eat;
+}
+
+void fly_eats::move()
+{
+      life*p=the_head.next;
+      while(p!=NULL)
+      {
+            p->last_position=p->position;
+            p->live_time++;
+            p->hunting=NULL;
+            if(p->live_time%p->fission_wait==(unsigned)p->fission_wait-1)
+            {
+                  p->life-=1.8;
+                  p->ener-=1.8;
+                  add(p->position,0.9);
+                  add(p->position,0.9);
+            }
+            if(p->ener<0)
+            {
+                  p->dead=true;
+            }
+            if(!p->dead)
+            {
+                  p->sleep=false;
+                  p->life+=0.0012;
+                  p->ener-=0.0012;
+                  //think
+                  if(p->ener>1.5*p->life)
+                  {
+                        p->hungry=false;
+                  }
+                  if(p->attacked||p->ground)
+                  {
+                        p->want_pos.x=(rand()%20000)/100.0;
+                        if(p->want_pos.x<150&&p->want_pos.x>100)
+                              p->want_pos.x=195;
+                        else if(p->want_pos.x>50&&p->want_pos.x<=100)
+                              p->want_pos.x=5;
+                        p->want_pos.y=(rand()%9000)/100.0+10.0;
+                        p->want_pos.z=(rand()%20000)/100.0;
+                        if(p->want_pos.z<150&&p->want_pos.z>100)
+                              p->want_pos.z=195;
+                        else if(p->want_pos.z>50&&p->want_pos.z<=100)
+                              p->want_pos.z=5;
+                        p->want_pos.c=(rand()%360000)/1000.0;
+                        p->attacked--;
+                  }
+                  else if(p->ener<(p->life)||p->hungry)
+                  {
+                        p->hungry=true;
+                        unsigned int a=p->position.x/10;
+                        unsigned int b=p->position.z/10;
+                        life*disl=my_world.w_trees.live_map[a][b];
+                        if(disl==0)
+                        {
+                              disl=my_world.w_grass_eats.live_map[a][b];
+                        }
+                        if(disl==0)
+                        {
+                              if(p->tem_time<200)
+                              {
+                                    ++(p->tem_time);
+                              }
+                              else
+                              {
+                                    p->want_pos.x=(rand()%20000)/100.0;
+                                    if(p->want_pos.x<150&&p->want_pos.x>100)
+                                          p->want_pos.x=195;
+                                    else if(p->want_pos.x>50&&p->want_pos.x<=100)
+                                          p->want_pos.x=5;
+                                    p->want_pos.y=(rand()%9000)/100.0+10.0;
+                                    p->want_pos.z=(rand()%20000)/100.0;
+                                    if(p->want_pos.z<150&&p->want_pos.z>100)
+                                          p->want_pos.z=195;
+                                    else if(p->want_pos.z>50&&p->want_pos.z<=100)
+                                          p->want_pos.z=5;
+                                    p->want_pos.c=(rand()%360000)/1000.0;
+                                    p->tem_time=0;
+                              }
+                        }
+                        else
+                        {
+                              p->tem_time=201;
+                              p->hunting=disl;
+                              p->want_pos=disl->position;
+                        }
+                  }
+                  else
+                        p->sleep=true;
+
+                  /////////////////////////////////////////////move
+                  if(!p->sleep)
+                  {
+                        float_virw_velocity dv;
+                        dv.x=(p->want_pos.x-p->position.x);
+                        dv.y=(p->want_pos.y-p->position.y);
+                        dv.z=(p->want_pos.z-p->position.z);
+                        dv.c=(p->want_pos.c-p->position.c);
+                        if(abs(dv.x)<0.1||abs(dv.y)<0.1||abs(dv.z)<0.1||abs(dv.c)<0.1)
+                        {
+                              p->velocity=p->mem_velocity;
+                              p->attacked=true;
+                        }
+                        else
+                        {
+                              if(dv.z<0)
+                              {
+                                    p->want_pos.b=180+atan(dv.x/dv.z)*57.3;
+                              }
+                              else
+                              {
+                                    p->want_pos.b=atan(dv.x/dv.z)*57.3;
+                                    if(p->want_pos.b<0)
+                                          p->want_pos.b=360+p->want_pos.b;
+                              }
+                              p->want_pos.a=atan(dv.y/sqrt(dv.x*dv.x+dv.z*dv.z))*57.3;
+                              float ang_a=p->want_pos.a-p->position.a;
+                              float ang_b=p->want_pos.b-p->position.b;
+                              if(ang_b>180)
+                              {
+                                    ang_b=ang_b-360;
+                              }
+                              float d_angle=sqrt(ang_a*ang_a+ang_b*ang_b);
+                              float speed=(255.0-d_angle)/3000.0;
+                              if(dv.x>1)
+                                    dv.x=1;
+                              if(dv.y>1)
+                                    dv.y=1;
+                              if(dv.z>1)
+                                    dv.z=1;
+                              if(dv.x<-1)
+                                    dv.x=-1;
+                              if(dv.y<-1)
+                                    dv.y=-1;
+                              if(dv.z<-1)
+                                    dv.z=-1;
+                              if(abs(dv.x)<0.1)
+                                    dv.x=0;
+                              if(abs(dv.z)<0.1)
+                                    dv.z=0;
+                              p->velocity.x+=dv.x*speed;
+                              p->velocity.y+=dv.y*speed;
+                              p->velocity.z+=dv.z*speed;
+                              p->velocity.a+=0.04*ang_a;
+                              p->velocity.b+=0.04*ang_b;
+                              p->velocity.c+=0.04*dv.c;
+                              p->mem_velocity=p->velocity;
+                        }
+                  }
+            }
+            else
+            {
+                  p->life-=0.005;
+            }
+            p->position.x+=p->velocity.x;
+            p->position.y+=p->velocity.y;
+            p->position.z+=p->velocity.z;
+            p->position.a+=p->velocity.a;
+            p->position.b+=p->velocity.b;
+            p->position.c+=p->velocity.c;
+            p=p->next;
+      }
+}

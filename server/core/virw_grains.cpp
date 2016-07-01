@@ -1,0 +1,128 @@
+#include<thread>
+#include<cmath>
+#include"virw_grains.h"
+#include"../base/interfaces.h"
+
+using namespace std;
+void virw_grain::add(int num,virw_position pos,int model,float color[])
+{
+	if(pos.y<40)
+	{
+		pos.y=40;
+	}
+
+	lock.lock();
+	if(num>0&&num<1000000)
+	{
+		if(live_num+num>max_num)
+		{
+			num=max_num-live_num;
+		}
+	}
+	else
+	{
+		num=0;
+	}
+
+	live_num+=num;
+    grain*p;
+	for(int i=0; i<num; ++i)
+	{
+        p=new grain();
+		p->model=model;
+		if(color[0]<0)
+		{
+			switch(model)
+			{
+			case(enum_id_gear):
+				p->color[0]=0.7*((rand()%10000)/10000.0+0.5);
+				p->color[1]=0.7*((rand()%10000)/10000.0+0.5);
+				p->color[2]=0.1*((rand()%10000)/10000.0+0.5);
+				break;
+			case(enum_id_snow):
+				p->color[0]=1.0*((rand()%10000)/10000.0+0.5);
+				p->color[1]=1.0*((rand()%10000)/10000.0+0.5);
+				p->color[2]=1.0*((rand()%10000)/10000.0+0.5);
+				break;
+			case(enum_id_maple):
+				p->color[0]=0.7*((rand()%10000)/10000.0+0.5);
+				p->color[1]=0.2*((rand()%10000)/10000.0+0.5);
+				p->color[2]=0.0;
+				break;
+			case(enum_id_petal):
+				p->color[0]=1.0*((rand()%10000)/10000.0+0.5);
+				p->color[1]=0.1*((rand()%10000)/10000.0+0.5);
+				p->color[2]=0.3*((rand()%10000)/10000.0+0.5);
+				break;
+            case(enum_id_hail):
+				p->color[0]=0.8*((rand()%10000)/10000.0+0.5);
+				p->color[1]=0.8*((rand()%10000)/10000.0+0.5);
+				p->color[2]=0.8*((rand()%10000)/10000.0+0.5);
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			p->color[0]=color[0]*((rand()%10000)/10000.0+0.5);
+			p->color[1]=color[1]*((rand()%10000)/10000.0+0.5);
+			p->color[2]=color[2]*((rand()%10000)/10000.0+0.5);
+		}
+		switch(model)
+		{
+		case(enum_id_gear):
+			p->life=0;
+			p->mass=0.001*((rand()%10000)/10000.0+0.5);
+			p->wind_resistance=0.8+(rand()%10000)/100000.0;
+			p->velocity.a=4.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.b=4.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.c=4.0*((rand()%10000)/10000.0+0.5);
+			break;
+		case(enum_id_snow):
+			p->life=800;
+			p->mass=0.001*((rand()%10000)/10000.0+0.5);
+			p->wind_resistance=0.8+(rand()%10000)/100000.0;
+			p->velocity.a=4.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.b=4.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.c=4.0*((rand()%10000)/10000.0+0.5);
+			break;
+		case(enum_id_maple):
+			p->life=1200;
+			p->mass=0.0007*((rand()%10000)/10000.0+0.5);
+			p->wind_resistance=0.7+(rand()%10000)/100000.0;
+			p->velocity.a=2.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.b=2.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.c=2.0*((rand()%10000)/10000.0+0.5);
+			break;
+		case(enum_id_petal):
+			p->life=1000;
+			p->mass=0.0006*((rand()%10000)/10000.0+0.5);
+			p->wind_resistance=0.7+(rand()%10000)/100000.0;
+			p->velocity.a=2.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.b=2.0*((rand()%10000)/10000.0+0.5);
+			p->velocity.c=2.0*((rand()%10000)/10000.0+0.5);
+			break;
+        case(enum_id_hail):
+			p->life=600;
+            p->mass=0.003*((rand()%10000)/10000.0+0.5);
+            p->wind_resistance=0.85+(rand()%8000)/100000.0;
+			break;
+		default:
+			break;
+		}
+        double r=20.0*((rand()%1000)/1000.0);
+        double ang=(rand()%36000)/100.0;
+
+        p->position.x=pos.x+r*sin(ang);
+        p->position.z=pos.z+r*cos(ang);
+        p->position.y=pos.y+((rand()%10000)/1000.0-5);
+
+        p->next=grains.next;
+        p->pre=&grains;
+        if(grains.next!=NULL)
+            grains.next->pre=p;
+        grains.next=p;
+	}
+	lock.unlock();
+}
